@@ -12,14 +12,18 @@ OPTIM    = -O2 -fexpensive-optimizations -funroll-loops
 LIBS     = $(ROOTLIBS) 
 GLIBS    = $(ROOTGLIBS)
 
-nuSpectrum: main.o classNuSpectrum.o
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) main.o classNuSpectrum.o -o nuSpectrum $(LIBS) $(GLIBS)
+nuSpectrum: main.o classNuSpectrum.o utils.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) main.o classNuSpectrum.o utils.o -o nuSpectrum $(LIBS) $(GLIBS)
 
 main.o: main.cc classNuSpectrum.cc
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -c main.cc -o main.o $(LIBS) $(GLIBS)
 
 classNuSpectrum.o: classNuSpectrum.cc
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -c classNuSpectrum.cc -o classNuSpectrum.o $(LIBS) $(GLIBS)
+
+utils.o: utils.cc
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -c utils.cc -o utils.o $(LIBS) $(GLIBS)
+
 
 .PHONY: clean mrproper
 

@@ -104,18 +104,25 @@ double NuSpectrum::Osc4Nu(double EE, double LL){
 
 TGraph NuSpectrum::IntGraph(double minE, double maxE, int nbNu){
   if(nbNu == -1) return -1;
-  const int n=100000; // Domain of the Neutrino Spectrum in Meter
+  // const long int n=100000; // Domain of the Neutrino Spectrum in Meter
+  const int n=10000; // Domain of the Neutrino Spectrum in Meter
   const int n_int=1000; // Number of integrations point
-  double x[n],y[n];
+  double x[2*n],y[2*n];
   for(int i=0;i<n;i++){
-    x[i]=i*0.01;
+    x[i]=i;
     y[i]=0;
+    // printf("x[%d]=%.0f\n",i,x[i]);
   }
+  for(int i=0;i<n;i++){
+    x[n+i]=n*(0.01*i+1);
+    y[n+i]=0;
+    // printf("x[%d]=%.0f\n",n+i,x[n+i]);
+  }
+
   double integral;
   double z[n_int]; double w[n_int];
   gauleg(minE,maxE,n_int,z,w);
-  for (int i=0;i<n;i++){
-    x[i]=i;
+  for (int i=0;i<2*n;i++){
     integral=0;
     for (int j=0;j<n_int;j++){
       if(nbNu == 3) integral+=w[j]*Osc3Nu(z[j],x[i]);
@@ -123,7 +130,7 @@ TGraph NuSpectrum::IntGraph(double minE, double maxE, int nbNu){
     }
     y[i]=integral/(maxE-minE);
   }  
-  TGraph gr(n,x,y);
+  TGraph gr(2*n,x,y);
   gr.SetLineColor(2);
   gr.SetLineWidth(2);
   gr.SetMarkerColor(2);
