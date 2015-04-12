@@ -30,8 +30,10 @@
 #include <TRandom3.h>
 #include <TFile.h>
 #include <TApplication.h>
+#include <TLatex.h>
 
 #include "utils.hh"
+#include "data.h"
 #include "classNuSpectrum.hh"
 
 void Interrupt(int arg){
@@ -129,23 +131,67 @@ void simulationCells(NuSpectrum spectrum){
 
 int main(int argc, char **argv){
 
-  // signal(SIGINT,Interrupt);
-  // argc=0;
-  // TApplication theApp("App",&argc,argv);
-  // theApp.Run();
+  signal(SIGINT,Interrupt);
+  argc=0;
+  TApplication theApp("App",&argc,argv);
   
   bool SimulationCells = false;  // Simulation des spectres en E dans les 6 cellules
 
+  TGraphErrors *manip[100];
+  int nbmanip=0;
+
+
+  TGraphErrors *bugey4=manip[nbmanip++]=bugey4Data();
+  TGraphErrors *ILL80=manip[nbmanip++]=ILL1980Data();
+  TGraphErrors *bugey3=manip[nbmanip++]=bugey3Data();
+  TGraphErrors *goesgen=manip[nbmanip++]=goesgenData();
+  TGraphErrors *rovno88=manip[nbmanip++]=rovno88Data();
+  TGraphErrors *rovno91=manip[nbmanip++]=rovno91Data();
+  TGraphErrors *krasnoyarsk=manip[nbmanip++]=krasnoyarskData();
+  TGraphErrors *SRP96=manip[nbmanip++]=SRP96Data();
+  TGraphErrors *chooz=manip[nbmanip++]=choozData();
+  TGraphErrors *pauloVerde=manip[nbmanip++]=pauloVerdeData();
+  TGraphErrors *dayabay=manip[nbmanip++]=dayabayData();
+  TGraphErrors *reno=manip[nbmanip++]=renoData();
+  TGraphErrors *kamland=manip[nbmanip++]=kamlandData();
+
+
   NuSpectrum spectrum;
-  TGraph gr;
-  gr = spectrum.IntGraph(2,8,4);
+  TGraph gr4nu;
+  gr4nu = spectrum.IntGraph(2,8,4);
+  // gr4nu = spectrum.Graph(2,4);
+  TGraph gr3nu;
+  gr3nu = spectrum.IntGraph(2,8,3);
+  // gr3nu = spectrum.Graph(2,3);
+
+  TCanvas *c1=new TCanvas("c1","c1",1000,800);
+  gPad->SetGrid();
+  TH1F *h=c1->DrawFrame(0.1,0.,1.e6,1.1);
+  h->SetTitle("Neutrino Oscillation Spectrum");
+  h->SetXTitle("Distance from reactor (m)");
+  h->SetYTitle("Surviving Probability #nu_{e} -> #nu_{e}");
+  gPad->SetLogx();
+  for(int i=0;i<nbmanip;i++){
+  	manip[i]->Draw("P");
+  }
+
+  gr4nu.Draw("same");
+  gr3nu.Draw("same");
+  TLatex latex;
+  latex.SetTextSize(0.025);
+  latex.SetTextAlign(13);  //align at top
+  latex.DrawLatex(1.1e3,1.03,"#color[2]{3 neutrinos}");
+  latex.DrawLatex(1.1e3,0.89,"#color[13]{4 neutrinos}");
+  
 
   TFile f("test.root","RECREATE");
-  gr.Write();
+  gr4nu.Write();
+  gr3nu.Write();
   
   if(SimulationCells){ // Simulation des spectres en E dans les 6 cellules
     simulationCells(spectrum);
   }
-
+  printf("Done (exit root, or hit Control-c)\n");
+  theApp.Run();
   return 0;
 }

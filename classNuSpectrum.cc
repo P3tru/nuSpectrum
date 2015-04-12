@@ -56,12 +56,12 @@ NuSpectrum::NuSpectrum()
   mixMatrix=mat34*mat24*mat14*mat23*mat13*mat12;
 
   // Delta Masses
-  deltam21=7.58e-5;
-  deltam31=2.35e-5;
-  deltam32=2.35e-3;
-  deltam41=2.3;
-  deltam42=0;
-  deltam43=0;
+  deltam21=7.58e-5; //eV
+  deltam31=2.35e-5; //eV
+  deltam32=2.35e-3; //eV
+  deltam41=2.3; //eV
+  deltam42=deltam41; //eV
+  deltam43=deltam41; //eV
 
   for(int i=0;i<4;i++) for(int j=0;j<4;j++) deltam[i][j]=0;
   deltam[1][0]=deltam21;
@@ -77,52 +77,64 @@ NuSpectrum::~NuSpectrum(){
 
 double NuSpectrum::Osc3Nu(double EE, double LL){
   double sin2theta[3];
-  for(int i=0;i<3;i++) sin2theta[i]=0;
+  // for(int i=0;i<3;i++) sin2theta[i]=0;
 
-  for (int i=1;i<3;i++){
-    for (int j=0;j<i;j++){
-      sin2theta[i]+=4*mixMatrix(0,i)*mixMatrix(0,i)*mixMatrix(0,j)*mixMatrix(0,j)*pow(sin(1.27*deltam[i][j]*LL/EE),2);
-    }
-  }  
-
-  return 1-sin2theta[1]-sin2theta[2];
+  // for (int i=1;i<3;i++){
+  //   for (int j=0;j<i;j++){
+  //     sin2theta[i]+=4*mixMatrix(0,i)*mixMatrix(0,i)*mixMatrix(0,j)*mixMatrix(0,j)*pow(sin(1.27*deltam[i][j]*LL/EE),2);
+  //   }
+  // }  
+  double ss12=0.85;
+  double ss13=0.092;
+  sin2theta[0]=pow(c13,4)*ss12*pow(sin(1.27*deltam[1][0]*LL/EE),2);
+  sin2theta[1]=ss13*pow(c12,2)*pow(sin(1.27*deltam[2][0]*LL/EE),2);
+  sin2theta[2]=ss13*pow(s12,2)*pow(sin(1.27*deltam[2][2]*LL/EE),2);
+  
+  return 1-sin2theta[0]-sin2theta[1]-sin2theta[2];
 }
 
 
 double NuSpectrum::Osc4Nu(double EE, double LL){
   double sin2theta[4];
-  for(int i=0;i<4;i++) sin2theta[i]=0;
-	for (int i=1;i<4;i++){
-		for (int j=0;j<i;j++){
-		sin2theta[i]+=4*mixMatrix(0,i)*mixMatrix(0,i)*mixMatrix(0,j)*mixMatrix(0,j)*pow(sin(1.27*deltam[i][j]*LL/EE),2);
-		}
-	}
+  // for(int i=0;i<4;i++) sin2theta[i]=0;
+  // 	for (int i=1;i<4;i++){
+  // 		for (int j=0;j<i;j++){
+  // 		sin2theta[i]+=4*mixMatrix(0,i)*mixMatrix(0,i)*mixMatrix(0,j)*mixMatrix(0,j)*pow(sin(1.27*deltam[i][j]*LL/EE),2);
+  // 		}
+  // 	}
 
-	double f=1-sin2theta[1]-sin2theta[2]-sin2theta[3];
+	double ss12=0.85;
+	double ss13=0.092;
+	double ss14=0.17;
+	sin2theta[0]=pow(c14,4)*pow(c13,4)*ss12*pow(sin(1.27*deltam[1][0]*LL/EE),2);
+	sin2theta[1]=pow(c14,4)*ss13*pow(sin(1.27*deltam[2][0]*LL/EE),2);
+	sin2theta[2]=pow(c13,2)*ss14*pow(sin(1.27*deltam[3][0]*LL/EE),2);
+	sin2theta[3]=pow(s13,2)*ss14*pow(sin(1.27*deltam[3][2]*LL/EE),2);
+	double f=1-sin2theta[0]-sin2theta[1]-sin2theta[2]-sin2theta[3];
 	return f;
 }
 
 TGraph NuSpectrum::IntGraph(double minE, double maxE, int nbNu){
   if(nbNu == -1) return -1;
-  // const long int n=100000; // Domain of the Neutrino Spectrum in Meter
-  const int n=10000; // Domain of the Neutrino Spectrum in Meter
+  const int n1=400000; // Domain of the Neutrino Spectrum in Meter
+  const int n2=100000;
+  int n=n1+n2;
   const int n_int=1000; // Number of integrations point
-  double x[2*n],y[2*n];
-  for(int i=0;i<n;i++){
-    x[i]=i;
+  double x[n],y[n];
+  for(int i=0;i<n1;i++){
+    x[i]=0.1*i;
     y[i]=0;
-    // printf("x[%d]=%.0f\n",i,x[i]);
   }
-  for(int i=0;i<n;i++){
-    x[n+i]=n*(0.01*i+1);
-    y[n+i]=0;
-    // printf("x[%d]=%.0f\n",n+i,x[n+i]);
+  for(int i=0;i<n2;i++){
+    x[n1+i]=0.1*n1+10*i;
+    y[i]=0;
+    // printf("n1ton2 x[%d]=%f\n",i,x[i]);
   }
 
   double integral;
   double z[n_int]; double w[n_int];
   gauleg(minE,maxE,n_int,z,w);
-  for (int i=0;i<2*n;i++){
+  for (int i=0;i<n;i++){
     integral=0;
     for (int j=0;j<n_int;j++){
       if(nbNu == 3) integral+=w[j]*Osc3Nu(z[j],x[i]);
@@ -130,10 +142,15 @@ TGraph NuSpectrum::IntGraph(double minE, double maxE, int nbNu){
     }
     y[i]=integral/(maxE-minE);
   }  
-  TGraph gr(2*n,x,y);
-  gr.SetLineColor(2);
-  gr.SetLineWidth(2);
-  gr.SetMarkerColor(2);
+  TGraph gr(n,x,y);
+  if(nbNu == 3) gr.SetLineColor(2);
+  if(nbNu == 4) gr.SetLineColor(13);
+  if(nbNu == 3) gr.SetLineWidth(2.);
+  if(nbNu == 4) gr.SetLineWidth(0.5);
+  if(nbNu == 3) gr.SetMarkerColor(2);
+  if(nbNu == 4) gr.SetMarkerColor(13);
+  if(nbNu == 3) gr.SetLineStyle(1);
+  if(nbNu == 4) gr.SetLineStyle(2);
   gr.SetMarkerStyle(7);
   gr.SetTitle("Neutrino Oscillation Spectrum");
   gr.GetXaxis()->SetTitle("Distance from reactor (m)");
@@ -152,6 +169,16 @@ TGraph NuSpectrum::Graph(double E, int nbNu){
     if(nbNu == 4) y[i]=Osc4Nu(E,x[i]);
   }
   TGraph gr(n,x,y);
+  if(nbNu == 3) gr.SetLineColor(1);
+  if(nbNu == 4) gr.SetLineColor(2);
+  gr.SetLineWidth(1);
+  if(nbNu == 3) gr.SetMarkerColor(1);
+  if(nbNu == 4) gr.SetMarkerColor(2);
+  gr.SetMarkerStyle(7);
+  gr.SetTitle("Neutrino Oscillation Spectrum");
+  gr.GetXaxis()->SetTitle("Distance from reactor (m)");
+  gr.GetYaxis()->SetTitle("Surviving Probability Ve -> Ve");
+  gr.GetYaxis()->SetRange(0,1);
   return gr;
 }
 
